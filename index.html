@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SushiLabs — Earn for Real Work</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  /* ── Reset ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: #ffffff; font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
+
+  /* ── Tokens ── */
+  :root {
+    --ink: #181d26;
+    --body: #41454d;
+    --muted: #41454d;
+    --muted-soft: #8a8f99;
+    --hairline: #dddddd;
+    --hairline-soft: #eef0f3;
+    --canvas: #ffffff;
+    --coral: #aa2d00;
+    --on-dark: #ffffff;
+    --on-dark-body: #888888;
+    --on-dark-hairline: rgba(255,255,255,0.08);
+  }
+
+  /* ── Scroll progress bar ── */
+  #scroll-progress {
+    position: fixed; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--coral); width: 0%; z-index: 9999;
+    transition: width 0.05s linear;
+    will-change: width;
+  }
+
+  /* ── Custom cursor ── */
+  #fluid-cursor {
+    position: fixed; top: 0; left: 0;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: white; mix-blend-mode: difference;
+    pointer-events: none; z-index: 2147483647;
+    opacity: 0; transition: opacity 200ms ease;
+    will-change: transform, opacity;
+  }
+
+  /* ── Nav ── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(255,255,255,0.78);
+    backdrop-filter: saturate(140%) blur(12px);
+    -webkit-backdrop-filter: saturate(140%) blur(12px);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .nav-inner {
+    max-width: 1280px; margin: 0 auto; padding: 0 24px;
+    height: 64px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-logo { text-decoration: none; display: flex; align-items: center; gap: 10px; }
+  .nav-logo-icon {
+    width: 30px; height: 30px; border-radius: 7px; background: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .nav-logo-icon span { font-size: 15px; }
+  .nav-brand {
+    font-size: 17px; font-weight: 700; color: var(--ink); letter-spacing: -0.015em;
+  }
+  .nav-actions { display: flex; align-items: center; gap: 8px; }
+  .nav-signin {
+    font-size: 14px; font-weight: 500; color: var(--body);
+    text-decoration: none; padding: 10px 16px; border-radius: 8px;
+  }
+  .nav-join {
+    font-size: 14px; font-weight: 500; color: var(--on-dark);
+    text-decoration: none; padding: 10px 18px; border-radius: 8px;
+    background: var(--ink); display: inline-block;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .nav-join:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(24,29,38,0.25); }
+
+  /* ── Marquee ── */
+  @keyframes sl-marquee {
+    from { transform: translate3d(0,0,0); }
+    to   { transform: translate3d(-33.3333%,0,0); }
+  }
+  .sl-marquee-track { animation: sl-marquee 40s linear infinite; will-change: transform; }
+  .sl-no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+  .sl-no-scrollbar::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  @media (prefers-reduced-motion: reduce) {
+    .sl-marquee-track { animation: none !important; transform: none !important; }
+  }
+
+  /* ── Scroll reveal ── */
+  .reveal {
+    opacity: 0; transform: translateY(30px);
+    transition: opacity 0.55s cubic-bezier(0.23,1,0.32,1), transform 0.55s cubic-bezier(0.23,1,0.32,1);
+  }
+  .reveal.visible { opacity: 1; transform: none; }
+  .reveal-x {
+    opacity: 0; transform: translateX(-40px);
+    transition: opacity 0.55s cubic-bezier(0.23,1,0.32,1), transform 0.55s cubic-bezier(0.23,1,0.32,1);
+  }
+  .reveal-x.visible { opacity: 1; transform: none; }
+
+  /* ── Eyebrow ── */
+  .eyebrow {
+    display: inline-block; font-size: 12px; font-weight: 600;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
+    clip-path: inset(0 100% 0 0); opacity: 0;
+    transition: clip-path 0.6s cubic-bezier(0.165,0.84,0.44,1), opacity 0.4s ease;
+  }
+  .eyebrow.visible { clip-path: inset(0 0% 0 0); opacity: 1; }
+  .eyebrow-coral { color: var(--coral); }
+  .eyebrow-white { color: rgba(255,255,255,0.7); }
+
+  /* ── Hero ── */
+  #hero {
+    position: relative; background: var(--canvas); overflow: hidden;
+    padding: 32px 20px 28px;
+    display: flex; flex-direction: column; justify-content: flex-start;
+  }
+  @media (min-width: 768px) { #hero { padding: 32px 32px 44px; } }
+
+  .hero-blob {
+    position: absolute; width: 640px; height: 640px; border-radius: 50%;
+    filter: blur(120px); opacity: 0.04; pointer-events: none; will-change: transform; z-index: 0;
+  }
+  .hero-blob-1 { background: var(--coral); top: -15%; right: -10%; }
+  .hero-blob-2 { background: var(--ink); bottom: -20%; left: -10%; }
+
+  .hero-content { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; width: 100%; }
+  .hero-h1 {
+    font-size: 42px; font-weight: 800; line-height: 0.98;
+    color: var(--ink); letter-spacing: -0.03em; max-width: 1100px;
+  }
+  @media (min-width: 768px) { .hero-h1 { font-size: 96px; } }
+
+  .hero-h1-line { display: block; }
+  .hero-h1-accent { color: var(--coral); min-height: 1.1em; display: block; position: relative; }
+
+  /* Word stagger */
+  .word-stagger-word {
+    display: inline-block; overflow: hidden; white-space: pre; vertical-align: top;
+    padding-bottom: 0.1em;
+  }
+  .word-stagger-inner {
+    display: inline-block; opacity: 0;
+    transform: translateY(40px); filter: blur(8px);
+    transition: opacity 0.5s cubic-bezier(0.23,1,0.32,1),
+                transform 0.5s cubic-bezier(0.23,1,0.32,1),
+                filter 0.5s cubic-bezier(0.23,1,0.32,1);
+    will-change: transform, filter, opacity;
+  }
+  .word-stagger-inner.show { opacity: 1; transform: none; filter: blur(0px); }
+
+  /* Accent cycle transition */
+  #accent-text {
+    display: inline-block;
+    transition: opacity 0.35s cubic-bezier(0.165,0.84,0.44,1),
+                filter 0.35s cubic-bezier(0.165,0.84,0.44,1),
+                transform 0.35s cubic-bezier(0.165,0.84,0.44,1);
+    will-change: filter, transform, opacity;
+  }
+  #accent-text.exit { opacity: 0; filter: blur(12px); transform: translateY(-20px); }
+  #accent-text.enter { opacity: 0; filter: blur(12px); transform: translateY(20px); }
+  #accent-text.active { opacity: 1; filter: blur(0px); transform: none; }
+
+  .hero-sub {
+    font-size: 18px; font-weight: 400; line-height: 1.6;
+    color: var(--body); margin: 16px 0 24px; max-width: 480px;
+    opacity: 0; transform: translateY(16px);
+    transition: opacity 0.55s 0.6s cubic-bezier(0.23,1,0.32,1), transform 0.55s 0.6s cubic-bezier(0.23,1,0.32,1);
+  }
+  .hero-sub.show { opacity: 1; transform: none; }
+
+  .hero-buttons {
+    display: flex; flex-direction: column; align-items: stretch; flex-wrap: wrap;
+    gap: 8px; max-width: 280px;
+    opacity: 0; transform: translateY(16px);
+    transition: opacity 0.55s 0.8s cubic-bezier(0.23,1,0.32,1), transform 0.55s 0.8s cubic-bezier(0.23,1,0.32,1);
+  }
+  @media (min-width: 768px) {
+    .hero-buttons { flex-direction: row; align-items: center; gap: 12px; max-width: none; }
+  }
+  .hero-buttons.show { opacity: 1; transform: none; }
+
+  .btn-primary {
+    font-size: 16px; font-weight: 500; color: var(--on-dark); text-decoration: none;
+    padding: 14px 28px; border-radius: 10px; background: var(--ink); display: inline-block;
+    text-align: center; letter-spacing: -0.005em;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(24,29,38,0.3); }
+  .btn-outline {
+    font-size: 16px; font-weight: 500; color: var(--ink); text-decoration: none;
+    padding: 14px 26px; border-radius: 10px; background: var(--canvas);
+    border: 1.5px solid var(--ink); display: inline-block; text-align: center;
+    transition: background 0.15s ease;
+  }
+  .btn-outline:hover { background: #f5f5f5; }
+
+  /* ── Marquee section ── */
+  #marquee-section {
+    position: relative; z-index: 2; background: var(--canvas);
+    border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline);
+    padding: 16px 0;
+  }
+  .marquee-overflow {
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(90deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,1) 25%, rgba(0,0,0,1) 75%, rgba(0,0,0,0.5) 100%);
+    mask-image: linear-gradient(90deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,1) 25%, rgba(0,0,0,1) 75%, rgba(0,0,0,0.5) 100%);
+  }
+  .marquee-track {
+    display: flex; gap: 32px; white-space: nowrap;
+  }
+  .marquee-item {
+    font-size: 13px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--muted); display: inline-flex; align-items: center; gap: 32px; flex-shrink: 0;
+  }
+  .marquee-dot { color: var(--hairline); font-size: 10px; }
+
+  /* ── Stats ── */
+  #stats {
+    background: var(--canvas); padding: 32px 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+  @media (min-width: 768px) { #stats { padding: 48px 0; } }
+  .stats-grid {
+    max-width: 1280px; margin: 0 auto; padding: 0 24px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 32px 16px;
+  }
+  @media (min-width: 768px) {
+    .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 0; }
+  }
+  .stat-cell {
+    opacity: 0; transform: translateY(60px);
+    transition: opacity 0.55s cubic-bezier(0.23,1,0.32,1), transform 0.55s cubic-bezier(0.23,1,0.32,1);
+  }
+  .stat-cell:nth-child(even) { transform: translateY(80px); }
+  .stat-cell.visible { opacity: 1; transform: none !important; }
+  @media (min-width: 768px) {
+    .stat-cell { padding: 0 32px; border-right: 1px solid var(--hairline); }
+    .stat-cell:last-child { border-right: none; }
+  }
+  .stat-number {
+    font-size: 52px; font-weight: 800; color: var(--ink);
+    letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  @media (min-width: 768px) { .stat-number { font-size: 80px; } }
+  .stat-suffix { color: var(--coral); margin-left: 2px; }
+  .stat-label {
+    font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--muted); margin-top: 8px;
+  }
+
+  /* ── How It Works ── */
+  #how-it-works {
+    background: #f8fafc; padding: 48px 0; border-bottom: 1px solid var(--hairline);
+  }
+  @media (min-width: 768px) { #how-it-works { padding: 72px 0; } }
+  .section-inner { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+  .section-h2 {
+    font-size: 36px; font-weight: 800; color: var(--ink);
+    letter-spacing: -0.035em; line-height: 0.98; margin: 0 0 24px; max-width: 800px;
+  }
+  @media (min-width: 768px) { .section-h2 { font-size: 72px; } }
+  .how-row {
+    display: grid; grid-template-columns: 1fr;
+    row-gap: 4px; padding: 24px 16px;
+    border-top: 1px solid var(--hairline);
+    opacity: 0; transform: translateX(-40px) translateY(-6px);
+    transition: opacity 0.55s cubic-bezier(0.23,1,0.32,1), transform 0.55s cubic-bezier(0.23,1,0.32,1),
+                background-color 0.2s ease;
+  }
+  .how-row:last-child { border-bottom: 1px solid var(--hairline); }
+  @media (min-width: 768px) {
+    .how-row {
+      grid-template-columns: 120px 1fr 1fr;
+      column-gap: 48px; padding: 48px 24px; row-gap: 0;
+    }
+  }
+  .how-row.visible { opacity: 1; transform: none; }
+  .how-row:hover { background-color: rgba(0,0,0,0.02); }
+  .how-step-num {
+    font-size: 13px; font-weight: 700; letter-spacing: 2px;
+    font-variant-numeric: tabular-nums; text-transform: uppercase;
+    color: var(--hairline); transition: color 0.2s ease, transform 0.2s ease;
+    transform-origin: left center;
+  }
+  .how-row:hover .how-step-num { color: var(--coral); transform: scale(1.4); }
+  .how-row h3 {
+    font-size: 22px; font-weight: 700; color: var(--ink);
+    letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 8px;
+  }
+  @media (min-width: 768px) { .how-row h3 { font-size: 32px; margin-bottom: 0; } }
+  .how-row p {
+    font-size: 15px; color: var(--body); max-width: 320px; line-height: 1.55;
+    transition: transform 0.2s ease;
+  }
+  .how-row:hover p { transform: translateX(8px); }
+
+  /* ── Categories ── */
+  #categories { background: var(--canvas); padding: 48px 0 40px; }
+  @media (min-width: 768px) { #categories { padding: 72px 0 40px; } }
+  .cats-mobile {
+    display: flex; gap: 12px; overflow-x: scroll; scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch; padding-bottom: 4px;
+    margin-left: -24px; margin-right: -24px; padding-left: 24px; padding-right: 80px;
+    scrollbar-width: none; -ms-overflow-style: none;
+  }
+  .cats-mobile::-webkit-scrollbar { display: none; }
+  .cats-desktop { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .cat-card {
+    background: var(--canvas); border: 1px solid var(--hairline);
+    border-radius: 8px; padding: 32px; min-width: 220px;
+    scroll-snap-align: start; flex-shrink: 0;
+    display: flex; flex-direction: column; gap: 8px;
+    position: relative; overflow: hidden;
+    opacity: 0; transform: translateY(30px);
+    transition: opacity 0.55s cubic-bezier(0.23,1,0.32,1),
+                transform 0.35s cubic-bezier(0.23,1,0.32,1),
+                border-color 0.2s ease,
+                box-shadow 0.25s cubic-bezier(0.23,1,0.32,1);
+    will-change: transform;
+  }
+  .cat-card:hover {
+    transform: translateY(-6px) !important;
+    border-color: var(--ink);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+  }
+  .cat-card.visible { opacity: 1; transform: translateY(0); }
+  .cat-name { font-size: 20px; font-weight: 700; color: var(--ink); letter-spacing: -0.015em; margin-bottom: 8px; }
+  .cat-count { font-size: 14px; color: var(--muted-soft); font-weight: 500; }
+  .cat-reward {
+    font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums;
+    margin-top: auto; padding-top: 16px; color: var(--muted-soft);
+    transition: color 0.2s ease;
+  }
+  .cat-card:hover .cat-reward { color: var(--coral); }
+
+  /* ── Why Us — dark slab, clip left-low ── */
+  #why-us {
+    position: relative; background: var(--ink); color: var(--on-dark);
+    padding: 72px 0 40px;
+    margin-top: -40px;
+    clip-path: polygon(0 40px, 100% 0, 100% 100%, 0 100%);
+    -webkit-clip-path: polygon(0 40px, 100% 0, 100% 100%, 0 100%);
+  }
+  @media (min-width: 768px) { #why-us { padding: 80px 0 56px; } }
+  .why-h2 {
+    font-size: 36px; font-weight: 800; color: var(--on-dark);
+    letter-spacing: -0.035em; line-height: 0.98; margin: 0 0 32px; max-width: 800px;
+  }
+  @media (min-width: 768px) { .why-h2 { font-size: 56px; } }
+  .pillars-grid { display: grid; grid-template-columns: 1fr; gap: 40px; }
+  @media (min-width: 768px) { .pillars-grid { grid-template-columns: repeat(3, 1fr); gap: 0; } }
+  .pillar {
+    padding: 0;
+    opacity: 0; clip-path: inset(0 100% 0 0);
+    transition: clip-path 0.8s cubic-bezier(0.165,0.84,0.44,1), opacity 0.5s ease;
+    will-change: clip-path, opacity;
+  }
+  @media (min-width: 768px) {
+    .pillar { padding: 0 40px; border-right: 1px solid var(--on-dark-hairline); }
+    .pillar:last-child { border-right: none; }
+    .pillar:first-child { padding-left: 0; }
+  }
+  .pillar.visible { opacity: 1; clip-path: inset(0 0% 0 0); }
+  .pillar-num {
+    font-size: 48px; font-weight: 800; color: var(--coral);
+    letter-spacing: -0.03em; line-height: 1; margin-bottom: 16px;
+    font-variant-numeric: tabular-nums;
+  }
+  .pillar h3 {
+    font-size: 24px; font-weight: 700; color: var(--on-dark);
+    margin: 0 0 8px; letter-spacing: -0.02em; line-height: 1.2;
+  }
+  @media (min-width: 768px) { .pillar h3 { font-size: 28px; } }
+  .pillar p { font-size: 15px; color: var(--on-dark-body); margin: 0; line-height: 1.6; max-width: 360px; }
+
+  /* ── Testimonials — white, clip right-low ── */
+  #testimonials {
+    position: relative; background: var(--canvas);
+    padding: 56px 0 40px;
+    margin-top: -40px;
+    clip-path: polygon(0 0, 100% 40px, 100% 100%, 0 100%);
+    -webkit-clip-path: polygon(0 0, 100% 40px, 100% 100%, 0 100%);
+  }
+  .quote-text {
+    font-size: 22px; font-weight: 500; line-height: 1.5;
+    color: var(--ink); letter-spacing: -0.015em; margin: 0 0 16px; max-width: 900px;
+    opacity: 1;
+  }
+  @media (min-width: 768px) { .quote-text { font-size: 32px; line-height: 1.4; } }
+  .quote-mark { color: var(--coral); }
+  .quote-author { display: flex; align-items: center; gap: 14px; }
+  .quote-avatar {
+    width: 44px; height: 44px; border-radius: 22px;
+    font-size: 16px; font-weight: 700; color: var(--ink);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .quote-name { font-size: 15px; font-weight: 600; color: var(--ink); letter-spacing: -0.005em; }
+  .quote-since { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .quote-dots { display: flex; gap: 8px; align-items: center; margin-top: 16px; margin-bottom: 24px; }
+  .quote-dot {
+    height: 10px; border-radius: 5px; border: none; background: var(--hairline);
+    cursor: pointer; padding: 0; transition: width 0.3s cubic-bezier(0.23,1,0.32,1), background 0.3s ease;
+    will-change: width;
+  }
+  .quote-dot.active { background: var(--ink); width: 28px !important; }
+  blockquote {
+    margin: 0;
+    transition: opacity 0.4s cubic-bezier(0.23,1,0.32,1), filter 0.4s cubic-bezier(0.23,1,0.32,1);
+  }
+  blockquote.fading { opacity: 0; filter: blur(6px); }
+
+  /* ── Final CTA — coral, custom clip ── */
+  #final-cta {
+    background: var(--coral);
+    padding: 112px 0 88px;
+    text-align: center; color: var(--on-dark);
+    position: relative; overflow: visible;
+    margin-top: -12px;
+    clip-path: polygon(0 12px, 100% 0, 100% 100%, 0 100%);
+    -webkit-clip-path: polygon(0 12px, 100% 0, 100% 100%, 0 100%);
+  }
+  @media (min-width: 768px) {
+    #final-cta {
+      padding: 144px 0 128px;
+      margin-top: -20px;
+      clip-path: polygon(0 20px, 100% 0, 100% 100%, 0 100%);
+      -webkit-clip-path: polygon(0 20px, 100% 0, 100% 100%, 0 100%);
+    }
+  }
+  .cta-h2 {
+    font-size: 64px; font-weight: 800; line-height: 0.95;
+    color: var(--on-dark); letter-spacing: -0.04em; margin: 0;
+  }
+  @media (min-width: 768px) { .cta-h2 { font-size: 128px; } }
+  .cta-sub {
+    font-size: 17px; font-weight: 400; line-height: 1.5;
+    color: rgba(255,255,255,0.88); margin: 32px auto 0; max-width: 560px;
+    letter-spacing: -0.005em;
+    opacity: 0; transform: translateY(16px);
+    transition: opacity 0.55s 0.5s cubic-bezier(0.23,1,0.32,1), transform 0.55s 0.5s cubic-bezier(0.23,1,0.32,1);
+  }
+  @media (min-width: 768px) { .cta-sub { font-size: 19px; margin-top: 40px; } }
+  .cta-sub.show { opacity: 1; transform: none; }
+  .cta-buttons {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 16px; margin-top: 36px;
+    opacity: 0; transform: translateY(16px);
+    transition: opacity 0.55s 0.6s cubic-bezier(0.23,1,0.32,1), transform 0.55s 0.6s cubic-bezier(0.23,1,0.32,1);
+  }
+  @media (min-width: 768px) { .cta-buttons { flex-direction: row; gap: 20px; margin-top: 48px; } }
+  .cta-buttons.show { opacity: 1; transform: none; }
+  .btn-cta-primary {
+    font-size: 17px; font-weight: 600; color: var(--coral); text-decoration: none;
+    padding: 18px 36px; border-radius: 12px; background: var(--on-dark); display: inline-block;
+    letter-spacing: -0.005em; text-align: center; min-width: 240px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  @media (min-width: 768px) { .btn-cta-primary { min-width: 0; } }
+  .btn-cta-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+  .btn-cta-outline {
+    font-size: 16px; font-weight: 500; color: var(--on-dark); text-decoration: none;
+    padding: 16px 32px; border-radius: 12px; background: transparent;
+    border: 1.5px solid rgba(255,255,255,0.55); display: inline-block;
+    text-align: center; min-width: 240px;
+    transition: background 0.15s ease;
+  }
+  @media (min-width: 768px) { .btn-cta-outline { min-width: 0; } }
+  .btn-cta-outline:hover { background: rgba(255,255,255,0.1); }
+  .cta-microcopy {
+    font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 24px;
+    letter-spacing: -0.005em; line-height: 1.5;
+    opacity: 0; transition: opacity 0.6s 0.8s cubic-bezier(0.165,0.84,0.44,1);
+  }
+  .cta-microcopy.show { opacity: 1; }
+
+  /* ── FAQ — white, clip right-low ── */
+  #faq {
+    position: relative; background: var(--canvas);
+    padding: 88px 0 40px;
+    margin-top: -40px;
+    clip-path: polygon(0 0, 100% 40px, 100% 100%, 0 100%);
+    -webkit-clip-path: polygon(0 0, 100% 40px, 100% 100%, 0 100%);
+  }
+  @media (min-width: 768px) { #faq { padding: 80px 0 40px; } }
+  .faq-h2 {
+    font-size: 36px; font-weight: 800; color: var(--ink);
+    letter-spacing: -0.035em; line-height: 0.98; margin: 0 0 24px; max-width: 800px;
+  }
+  @media (min-width: 768px) { .faq-h2 { font-size: 64px; } }
+  .faq-grid { display: grid; grid-template-columns: 1fr; gap: 32px; }
+  @media (min-width: 768px) { .faq-grid { grid-template-columns: repeat(2, 1fr); gap: 32px 64px; } }
+  .faq-item {
+    opacity: 0; transform: translateY(24px);
+    transition: opacity 0.55s cubic-bezier(0.23,1,0.32,1), transform 0.55s cubic-bezier(0.23,1,0.32,1);
+  }
+  .faq-item.visible { opacity: 1; transform: none; }
+  .faq-q { font-size: 17px; font-weight: 700; color: var(--ink); letter-spacing: -0.015em; }
+  .faq-a { font-size: 15px; line-height: 1.6; color: var(--body); margin-top: 6px; }
+
+  /* ── Footer ── */
+  footer {
+    position: relative; background: var(--ink);
+    padding: 68px 0 28px;
+    margin-top: -40px;
+    clip-path: polygon(0 40px, 100% 0, 100% 100%, 0 100%);
+    -webkit-clip-path: polygon(0 40px, 100% 0, 100% 100%, 0 100%);
+  }
+  .footer-inner {
+    max-width: 1280px; margin: 0 auto; padding: 0 24px;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: space-between; gap: 8px;
+  }
+  @media (min-width: 768px) { .footer-inner { flex-direction: row; gap: 24px; } }
+  .footer-brand { display: flex; align-items: center; gap: 10px; }
+  .footer-logo-icon {
+    width: 28px; height: 28px; border-radius: 6px; background: rgba(255,255,255,0.1);
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
+  }
+  .footer-brand-name { font-size: 15px; font-weight: 700; color: var(--on-dark); letter-spacing: -0.01em; }
+  .footer-links { display: flex; align-items: center; gap: 12px; font-size: 13px; color: rgba(255,255,255,0.5); }
+  .footer-links a { color: inherit; text-decoration: none; transition: color 0.15s ease; }
+  .footer-links a:hover { color: rgba(255,255,255,0.85); }
+  .footer-copy { font-size: 13px; color: rgba(255,255,255,0.5); }
+
+  /* ── Cursor hide ── */
+  .cursor-hide,
+  .cursor-hide *,
+  .cursor-hide a,
+  .cursor-hide button,
+  .cursor-hide [role="button"],
+  .cursor-hide input,
+  .cursor-hide textarea,
+  .cursor-hide select {
+    cursor: none !important;
+  }
+</style>
+</head>
+<body>
+
+<!-- Scroll Progress -->
+<div id="scroll-progress" aria-hidden="true"></div>
+
+<!-- Custom Cursor -->
+<div id="fluid-cursor" aria-hidden="true"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon"><span>🍣</span></div>
+      <span class="nav-brand">SushiLabs</span>
+    </a>
+    <div class="nav-actions">
+      <a href="/login" class="nav-signin">Sign in</a>
+      <a href="/register" class="nav-join">Join free</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-blob hero-blob-1" aria-hidden="true"></div>
+  <div class="hero-blob hero-blob-2" aria-hidden="true"></div>
+  <div class="hero-content">
+    <div style="margin-bottom: 8px;">
+      <span class="eyebrow" id="hero-eyebrow">EARN FOR REAL WORK · INDIA</span>
+    </div>
+    <h1 class="hero-h1">
+      <span class="hero-h1-line" id="hero-line-1"></span>
+      <span class="hero-h1-line" id="hero-line-2"></span>
+      <span class="hero-h1-accent" id="hero-line-3">
+        <span id="accent-text" class="enter"></span>
+      </span>
+    </h1>
+    <p class="hero-sub" id="hero-sub">
+      SushiLabs pays Indian community members for meaningful work: testing,
+      research, creative tasks. Pick a task, submit your work, get paid to
+      UPI in hours.
+    </p>
+    <div class="hero-buttons" id="hero-buttons">
+      <a href="/register" class="btn-primary">Get started free →</a>
+      <a href="/login" class="btn-outline">Sign in</a>
+    </div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<section id="marquee-section">
+  <div class="marquee-overflow">
+    <div class="marquee-track sl-marquee-track" id="marquee-track"></div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section id="stats">
+  <div class="stats-grid">
+    <div class="stat-cell" data-value="620" data-fmt="indian" data-suffix="+">
+      <div class="stat-number"><span class="stat-num-val">0</span><span class="stat-suffix">+</span></div>
+      <div class="stat-label">Members</div>
+    </div>
+    <div class="stat-cell" data-value="4032000" data-fmt="rupee" data-suffix="">
+      <div class="stat-number"><span class="stat-num-val">₹0</span></div>
+      <div class="stat-label">Paid to members</div>
+    </div>
+    <div class="stat-cell" data-value="412" data-fmt="indian" data-suffix="">
+      <div class="stat-number"><span class="stat-num-val">0</span></div>
+      <div class="stat-label">Approvals · 30 days</div>
+    </div>
+    <div class="stat-cell" data-value="48" data-fmt="plain" data-suffix="h">
+      <div class="stat-number"><span class="stat-num-val">0</span><span class="stat-suffix">h</span></div>
+      <div class="stat-label">Avg. review window</div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how-it-works">
+  <div class="section-inner">
+    <div style="margin-bottom: 8px;"><span class="eyebrow">HOW IT WORKS</span></div>
+    <div style="margin-bottom: 24px;"><h2 class="section-h2 reveal">Four steps.</h2></div>
+    <div id="how-steps"></div>
+  </div>
+</section>
+
+<!-- CATEGORIES -->
+<section id="categories">
+  <div class="section-inner">
+    <div style="margin-bottom: 8px;"><span class="eyebrow">WORK CATEGORIES</span></div>
+    <div style="margin-bottom: 24px;"><h2 class="section-h2 reveal">What members ship.</h2></div>
+    <div id="cats-container"></div>
+  </div>
+</section>
+
+<!-- WHY US -->
+<section id="why-us">
+  <div class="section-inner">
+    <div style="margin-bottom: 8px;"><span class="eyebrow eyebrow-coral">WHY SUSHILABS</span></div>
+    <h2 class="why-h2">Built for the work.</h2>
+    <div class="pillars-grid" id="pillars-grid"></div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section id="testimonials">
+  <div class="section-inner">
+    <div style="margin-bottom: 8px;"><span class="eyebrow">WHAT MEMBERS SAY</span></div>
+    <div>
+      <div style="position: relative;">
+        <blockquote id="testimonial-block">
+          <p class="quote-text" id="quote-text"></p>
+          <div class="quote-author">
+            <div class="quote-avatar" id="quote-avatar"></div>
+            <div>
+              <div class="quote-name" id="quote-name"></div>
+              <div class="quote-since" id="quote-since"></div>
+            </div>
+          </div>
+        </blockquote>
+      </div>
+      <div class="quote-dots" id="quote-dots"></div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section id="final-cta">
+  <div style="max-width: 1280px; margin: 0 auto; padding: 0 32px;">
+    <div style="margin-bottom: 24px;"><span class="eyebrow eyebrow-white">READY WHEN YOU ARE</span></div>
+    <h2 class="cta-h2" id="cta-headline"></h2>
+    <p class="cta-sub" id="cta-sub">
+      Real work, paid in rupees. Sign up takes 30 seconds. UPI hits your account in hours, not weeks.
+    </p>
+    <div class="cta-buttons" id="cta-buttons">
+      <a href="/register" class="btn-cta-primary">Get started free →</a>
+      <a href="/login" class="btn-cta-outline">Sign in</a>
+    </div>
+    <div class="cta-microcopy" id="cta-microcopy">
+      Free to start · UPI payouts · No platform fees
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq">
+  <div class="section-inner">
+    <div style="margin-bottom: 8px;"><span class="eyebrow">COMMON QUESTIONS</span></div>
+    <h2 class="faq-h2 reveal">Quick answers.</h2>
+    <div class="faq-grid" id="faq-grid"></div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-logo-icon">🍣</div>
+      <span class="footer-brand-name">SushiLabs</span>
+    </div>
+    <div class="footer-links" id="footer-links-desktop">
+      <a href="/privacy">Privacy</a>
+      <span aria-hidden="true">·</span>
+      <a href="/terms">Terms</a>
+      <span aria-hidden="true">·</span>
+      <a href="https://x.com/SushiLabs" target="_blank" rel="noreferrer noopener">@SushiLabs</a>
+    </div>
+    <span class="footer-copy" id="footer-year"></span>
+  </div>
+</footer>
+
+<script>
+/* ── Data ── */
+const MARQUEE_ITEMS = [
+  "2,400+ tasks completed","620+ members","₹40L+ paid out","48hr reviews",
+  "UPI payouts","No platform fees","Human-reviewed","Daily payouts",
+  "Indian creator economy","Trusted by 600+",
+];
+const ACCENT_CYCLE = ["Ship work.", "Get paid.", "Build together.", "Own it."];
+const STEPS = [
+  { num:"01", title:"Browse open tasks", desc:"See what's available. Each task lists the reward, time estimate, and what proof we need." },
+  { num:"02", title:"Do the work", desc:"Complete the task at your own pace. Most take 15 to 60 minutes. Submit a screenshot or link." },
+  { num:"03", title:"We review fast", desc:"Human review within 48 hours. Approve, reject with feedback, or ping you back for a fix." },
+  { num:"04", title:"Withdraw to UPI", desc:"Approved earnings hit your wallet. Withdraw anytime once you cross the minimum." },
+];
+const CATEGORIES = [
+  { name:"Product testing",    count:"180+ tasks", reward:"₹400 to ₹3,200" },
+  { name:"Research tasks",     count:"120+ tasks", reward:"₹240 to ₹1,600" },
+  { name:"Community feedback", count:"95+ tasks",  reward:"₹160 to ₹1,200" },
+  { name:"Creative work",      count:"70+ tasks",  reward:"₹800 to ₹6,400" },
+  { name:"Technical tasks",    count:"45+ tasks",  reward:"₹1,200 to ₹8,000" },
+  { name:"Data entry",         count:"65+ tasks",  reward:"₹400 to ₹2,000" },
+];
+const PILLARS = [
+  { num:"01", title:"Real payouts",       body:"Money in your wallet within 48 hours of approval. No vague points. No months of waiting. No hidden fees." },
+  { num:"02", title:"Built in India",     body:"UPI payouts. Rupee pricing. Indian-locale formatting. Designed end to end for the Indian creator economy." },
+  { num:"03", title:"Reviews you can trust", body:"Every submission gets a human review. If we reject, we tell you why and let you re-submit after a fix." },
+];
+const QUOTES = [
+  { text:"Got paid ₹2,400 for one weekend of testing. Smooth UPI, clear feedback when I had a question. The briefs are actually honest.", name:"Aarav S.", since:"2024", accent:"#fcab79", initial:"A" },
+  { text:"I have used a dozen task platforms. SushiLabs is the only one that respects your time. No spammy notifications, no point grinding, just real work that pays in rupees.", name:"Priya K.", since:"2023", accent:"#a8d8c4", initial:"P" },
+  { text:"The 48 hour review SLA is real. I have submitted at midnight and had ₹600 in my UPI by Sunday afternoon. That alone makes it different from every freelance app I have tried.", name:"Rohan M.", since:"2024", accent:"#f4d35e", initial:"R" },
+];
+const FAQS = [
+  { q:"Who can join?", a:"Anyone in India can sign up. Some high-value tasks may have eligibility requirements like prior approvals or account age." },
+  { q:"How do I get paid?", a:"Earnings accumulate in your in-app wallet. Once you cross the minimum withdrawal amount, request a payout. UPI hits your account in hours." },
+  { q:"How long does review take?", a:"Most submissions are reviewed within 48 hours. You'll get a notification the moment we approve, reject, or need a follow-up." },
+  { q:"Can a submission be rejected?", a:"Yes. If it doesn't meet the brief, we reject with feedback. You can usually re-submit after addressing the issues." },
+  { q:"How are tasks priced?", a:"Every task lists its reward upfront. No negotiation, no surprise deductions, no platform fee on payout." },
+  { q:"Is there a referral program?", a:"Yes. Invite friends, earn a commission on every approved submission they make, plus a join bonus on signup." },
+];
+
+/* ── Helpers ── */
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const isMobile = () => window.innerWidth < 768;
+
+function fmtIndian(n) { return Math.round(n).toLocaleString('en-IN'); }
+function fmtRupee(n)  { return '₹' + Math.round(n).toLocaleString('en-IN'); }
+function fmtPlain(n)  { return Math.round(n).toString(); }
+
+function countUp(el, to, fmt, duration) {
+  if (reduced) { el.textContent = fmt(to); return; }
+  const start = performance.now();
+  function tick(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    el.textContent = fmt(to * ease);
+    if (t < 1) requestAnimationFrame(tick);
+    else el.textContent = fmt(to);
+  }
+  requestAnimationFrame(tick);
+}
+
+/* ── Word stagger helper ── */
+function wordStagger(text, container, delayBase = 0, stagger = 0.04) {
+  container.innerHTML = '';
+  text.split(' ').forEach((w, i) => {
+    const outer = document.createElement('span');
+    outer.className = 'word-stagger-word';
+    const inner = document.createElement('span');
+    inner.className = 'word-stagger-inner';
+    inner.textContent = w + (i < text.split(' ').length - 1 ? ' ' : '');
+    if (reduced) { inner.classList.add('show'); }
+    else {
+      inner.style.transitionDelay = `${delayBase + i * stagger}s`;
+    }
+    outer.appendChild(inner);
+    container.appendChild(outer);
+  });
+}
+
+function triggerWordStagger(container) {
+  container.querySelectorAll('.word-stagger-inner').forEach(el => el.classList.add('show'));
+}
+
+/* ── Scroll progress ── */
+const progressBar = document.getElementById('scroll-progress');
+function updateProgress() {
+  const h = document.documentElement.scrollHeight - window.innerHeight;
+  const p = h > 0 ? (window.scrollY / h) * 100 : 0;
+  progressBar.style.width = p + '%';
+}
+if (!reduced) window.addEventListener('scroll', updateProgress, { passive: true });
+
+/* ── Custom cursor ── */
+const cursor = document.getElementById('fluid-cursor');
+const isTouchDevice = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+if (!reduced && !isTouchDevice) {
+  document.body.classList.add('cursor-hide');
+  const mouse = { x: 0, y: 0 };
+  const pos = { x: 0, y: 0 };
+  window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; cursor.style.opacity = '1'; }, { passive: true });
+  document.documentElement.addEventListener('mouseleave', () => { cursor.style.opacity = '0'; });
+  document.documentElement.addEventListener('mouseenter', () => { cursor.style.opacity = '1'; });
+  window.addEventListener('touchstart', () => { cursor.style.opacity = '0'; }, { passive: true });
+  const K = 0.6, HALF = 6;
+  (function tick() {
+    pos.x += (mouse.x - pos.x) * K;
+    pos.y += (mouse.y - pos.y) * K;
+    cursor.style.transform = `translate3d(${pos.x - HALF}px, ${pos.y - HALF}px, 0)`;
+    requestAnimationFrame(tick);
+  })();
+}
+
+/* ── Footer year ── */
+document.getElementById('footer-year').textContent = `© ${new Date().getFullYear()} SushiLabs. All rights reserved.`;
+
+/* ── Hide footer links on mobile ── */
+function updateFooterLinks() {
+  document.getElementById('footer-links-desktop').style.display = isMobile() ? 'none' : 'flex';
+}
+updateFooterLinks();
+window.addEventListener('resize', updateFooterLinks);
+
+/* ── Marquee ── */
+(function buildMarquee() {
+  const track = document.getElementById('marquee-track');
+  const tripled = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS, ...MARQUEE_ITEMS];
+  tripled.forEach(item => {
+    const span = document.createElement('span');
+    span.className = 'marquee-item';
+    span.innerHTML = `${item}<span class="marquee-dot">●</span>`;
+    track.appendChild(span);
+  });
+})();
+
+/* ── How It Works ── */
+(function buildSteps() {
+  const container = document.getElementById('how-steps');
+  STEPS.forEach((step, i) => {
+    const row = document.createElement('div');
+    row.className = 'how-row reveal-x';
+    row.style.transitionDelay = `${i * 0.1}s`;
+    row.innerHTML = `
+      <div class="how-step-num">Step ${step.num}</div>
+      <h3>${step.title}</h3>
+      <p>${step.desc}</p>
+    `;
+    if (i === STEPS.length - 1) row.style.borderBottom = '1px solid var(--hairline)';
+    container.appendChild(row);
+  });
+})();
+
+/* ── Categories ── */
+(function buildCats() {
+  const container = document.getElementById('cats-container');
+  const mobile = isMobile();
+  const wrapper = document.createElement('div');
+  wrapper.className = mobile ? 'cats-mobile sl-no-scrollbar' : 'cats-desktop';
+  wrapper.id = 'cats-wrapper';
+  CATEGORIES.forEach((cat, i) => {
+    const card = document.createElement('div');
+    card.className = 'cat-card';
+    card.style.transitionDelay = `${i * 0.06}s`;
+    if (mobile) { card.style.padding = '24px'; }
+    card.innerHTML = `
+      <div class="cat-name">${cat.name}</div>
+      <div class="cat-count">${cat.count}</div>
+      <div class="cat-reward">${cat.reward}</div>
+    `;
+    wrapper.appendChild(card);
+  });
+  container.appendChild(wrapper);
+  window.addEventListener('resize', () => {
+    const m = isMobile();
+    wrapper.className = m ? 'cats-mobile sl-no-scrollbar' : 'cats-desktop';
+  });
+})();
+
+/* ── Pillars ── */
+(function buildPillars() {
+  const grid = document.getElementById('pillars-grid');
+  PILLARS.forEach((p, i) => {
+    const div = document.createElement('div');
+    div.className = 'pillar';
+    div.style.transitionDelay = `${i * 0.2}s`;
+    div.innerHTML = `
+      <div class="pillar-num">${p.num}</div>
+      <h3>${p.title}</h3>
+      <p>${p.body}</p>
+    `;
+    grid.appendChild(div);
+  });
+})();
+
+/* ── Testimonials ── */
+let testimonialIdx = 0;
+function renderTestimonial(idx, animate = false) {
+  const q = QUOTES[idx];
+  const block = document.getElementById('testimonial-block');
+  if (animate && !reduced) {
+    block.classList.add('fading');
+    setTimeout(() => {
+      setTestimonialContent(q);
+      block.classList.remove('fading');
+    }, 400);
+  } else {
+    setTestimonialContent(q);
+  }
+  document.querySelectorAll('.quote-dot').forEach((dot, i) => {
+    dot.classList.toggle('active', i === idx);
+    dot.style.width = i === idx ? '28px' : '10px';
+  });
+}
+function setTestimonialContent(q) {
+  document.getElementById('quote-text').innerHTML = `<span class="quote-mark">"</span>${q.text}<span class="quote-mark">"</span>`;
+  document.getElementById('quote-avatar').textContent = q.initial;
+  document.getElementById('quote-avatar').style.background = q.accent;
+  document.getElementById('quote-name').textContent = q.name;
+  document.getElementById('quote-since').textContent = `Member · since ${q.since}`;
+}
+(function buildDots() {
+  const dots = document.getElementById('quote-dots');
+  QUOTES.forEach((_, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'quote-dot' + (i === 0 ? ' active' : '');
+    btn.style.width = i === 0 ? '28px' : '10px';
+    btn.setAttribute('aria-label', `Quote ${i+1} of ${QUOTES.length}`);
+    btn.addEventListener('click', () => { testimonialIdx = i; renderTestimonial(i, true); });
+    dots.appendChild(btn);
+  });
+  renderTestimonial(0);
+  if (!reduced) setInterval(() => { testimonialIdx = (testimonialIdx + 1) % QUOTES.length; renderTestimonial(testimonialIdx, true); }, 6000);
+})();
+
+/* ── FAQ ── */
+(function buildFAQ() {
+  const grid = document.getElementById('faq-grid');
+  FAQS.forEach((item, i) => {
+    const div = document.createElement('div');
+    div.className = 'faq-item';
+    div.style.transitionDelay = `${i * 0.06}s`;
+    div.innerHTML = `<div class="faq-q">${item.q}</div><div class="faq-a">${item.a}</div>`;
+    grid.appendChild(div);
+  });
+})();
+
+/* ── CTA headline word stagger ── */
+(function buildCTAHeadline() {
+  const h2 = document.getElementById('cta-headline');
+  const lines = ["Pick a task.", "Get paid.", "Today."];
+  lines.forEach(line => {
+    const span = document.createElement('span');
+    span.style.display = 'block';
+    wordStagger(line, span, 0, 0.05);
+    h2.appendChild(span);
+  });
+})();
+
+/* ── Hero word stagger ── */
+wordStagger("Complete tasks.", document.getElementById('hero-line-1'), 0, 0.04);
+wordStagger("Earn rewards.",   document.getElementById('hero-line-2'), 0.08, 0.04);
+
+/* ── Hero accent cycling ── */
+let accentIdx = 0;
+const accentEl = document.getElementById('accent-text');
+function setAccent(text, initial = false) {
+  if (initial) {
+    accentEl.textContent = '';
+    wordStagger(text, accentEl, 0.16, 0.04);
+    accentEl.classList.remove('enter', 'exit');
+    accentEl.classList.add('active');
+    if (!reduced) setTimeout(() => triggerWordStagger(accentEl), 50);
+  } else {
+    accentEl.textContent = '';
+    const span = document.createElement('span');
+    span.textContent = text;
+    accentEl.appendChild(span);
+  }
+}
+function cycleAccent() {
+  if (reduced) return;
+  accentEl.classList.remove('active');
+  accentEl.classList.add('exit');
+  setTimeout(() => {
+    accentIdx = (accentIdx + 1) % ACCENT_CYCLE.length;
+    accentEl.classList.remove('exit');
+    accentEl.classList.add('enter');
+    setAccent(ACCENT_CYCLE[accentIdx]);
+    requestAnimationFrame(() => {
+      accentEl.classList.remove('enter');
+      accentEl.classList.add('active');
+    });
+  }, 350);
+}
+setAccent(ACCENT_CYCLE[0], true);
+if (!reduced) setInterval(cycleAccent, 3000);
+
+/* ── Hero entrance ── */
+setTimeout(() => {
+  document.getElementById('hero-eyebrow').classList.add('visible');
+  if (!reduced) {
+    triggerWordStagger(document.getElementById('hero-line-1'));
+    setTimeout(() => triggerWordStagger(document.getElementById('hero-line-2')), 80);
+  } else {
+    triggerWordStagger(document.getElementById('hero-line-1'));
+    triggerWordStagger(document.getElementById('hero-line-2'));
+  }
+  document.getElementById('hero-sub').classList.add('show');
+  document.getElementById('hero-buttons').classList.add('show');
+}, 50);
+
+/* ── IntersectionObserver for scroll reveals ── */
+const ioOpts = { threshold: 0.05, rootMargin: '-15% 0px' };
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    const el = entry.target;
+
+    /* eyebrows */
+    if (el.classList.contains('eyebrow')) { el.classList.add('visible'); io.unobserve(el); return; }
+
+    /* reveal / reveal-x */
+    if (el.classList.contains('reveal') || el.classList.contains('reveal-x')) {
+      el.classList.add('visible'); io.unobserve(el); return;
+    }
+
+    /* stat cells */
+    if (el.classList.contains('stat-cell')) {
+      el.classList.add('visible');
+      const valEl = el.querySelector('.stat-num-val');
+      const to   = parseFloat(el.dataset.value);
+      const fmt  = el.dataset.fmt;
+      const sfx  = el.dataset.suffix;
+      const fmtFn = fmt === 'rupee' ? fmtRupee : fmt === 'indian' ? fmtIndian : fmtPlain;
+      valEl.textContent = fmtFn(0);
+      countUp(valEl, to, fmtFn, 1500);
+      io.unobserve(el);
+      return;
+    }
+
+    /* how-rows */
+    if (el.classList.contains('how-row')) {
+      el.classList.add('visible'); io.unobserve(el); return;
+    }
+
+    /* cat-cards */
+    if (el.classList.contains('cat-card')) {
+      el.classList.add('visible'); io.unobserve(el); return;
+    }
+
+    /* pillars */
+    if (el.classList.contains('pillar')) {
+      el.classList.add('visible'); io.unobserve(el); return;
+    }
+
+    /* faq items */
+    if (el.classList.contains('faq-item')) {
+      el.classList.add('visible'); io.unobserve(el); return;
+    }
+
+    /* cta section */
+    if (el.id === 'cta-observe') {
+      document.getElementById('cta-sub').classList.add('show');
+      document.getElementById('cta-buttons').classList.add('show');
+      document.getElementById('cta-microcopy').classList.add('show');
+      // CTA headline word stagger
+      document.querySelectorAll('#cta-headline .word-stagger-inner').forEach((w, i) => {
+        setTimeout(() => w.classList.add('show'), i * 40);
+      });
+      io.unobserve(el);
+      return;
+    }
+
+    /* CTA eyebrow */
+    if (el.classList.contains('eyebrow-white')) { el.classList.add('visible'); io.unobserve(el); return; }
+  });
+}, ioOpts);
+
+/* Observe eyebrows */
+document.querySelectorAll('.eyebrow').forEach(el => io.observe(el));
+
+/* Observe reveals */
+document.querySelectorAll('.reveal, .reveal-x').forEach(el => io.observe(el));
+
+/* Observe stats */
+document.querySelectorAll('.stat-cell').forEach(el => io.observe(el));
+
+/* Observe how-rows */
+document.querySelectorAll('.how-row').forEach(el => io.observe(el));
+
+/* Observe cat-cards */
+document.querySelectorAll('.cat-card').forEach(el => io.observe(el));
+
+/* Observe pillars */
+document.querySelectorAll('.pillar').forEach(el => io.observe(el));
+
+/* Observe faq */
+document.querySelectorAll('.faq-item').forEach(el => io.observe(el));
+
+/* CTA observer anchor */
+const ctaAnchor = document.createElement('div');
+ctaAnchor.id = 'cta-observe';
+ctaAnchor.style.height = '1px';
+document.getElementById('final-cta').prepend(ctaAnchor);
+io.observe(ctaAnchor);
+
+/* Observe testimonial section eyebrow */
+const testEyebrow = document.querySelector('#testimonials .eyebrow');
+if (testEyebrow) io.observe(testEyebrow);
+</script>
+</body>
+</html>
